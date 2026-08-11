@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityVolt — Where's the Gap?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@400;600&family=Work+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --signal:#0C3C78;      /* motorway sign blue */
+    --signal-dark:#082A54;
+    --route-white:#FDFDF9; /* background, warm-white reflective coating */
+    --verge:#1F5C4A;       /* electric/route green */
+    --hazard:#F2A93B;      /* used sparingly, for the "gap" signal */
+    --asphalt:#22262B;     /* ink */
+    --asphalt-dim:#5E6469;
+    --lane:#D8DBD3;        /* dividers */
+    --panel:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--route-white);
+    color:var(--asphalt);
+    font-family:'Work Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px;}
+  a{color:var(--signal);}
+
+  /* ---------- Header: gantry bar ---------- */
+  header.gantry{
+    background:var(--asphalt);
+    color:var(--route-white);
+    padding:14px 0;
+    font-family:'Overpass Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+  }
+  header.gantry .wrap{display:flex;justify-content:space-between;align-items:center;}
+  .gantry-brand{font-family:'Overpass',sans-serif;font-weight:800;letter-spacing:0.03em;color:var(--route-white);}
+  .gantry-brand span{color:var(--hazard);}
+  .gantry-meta{opacity:0.75;}
+
+  /* ---------- Hero ---------- */
+  .hero-outer{
+    position:relative;overflow:hidden;
+    background:
+      radial-gradient(120% 80% at 78% 12%, rgba(242,169,59,0.55) 0%, rgba(242,169,59,0) 45%),
+      linear-gradient(165deg, #10193B 0%, #202A63 34%, #5B3A78 60%, #B4462F 84%, #F2A93B 100%);
+  }
+  .hero-outer::before{
+    content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(90% 55% at 76% 20%, rgba(255,214,140,0.4) 0%, rgba(255,214,140,0) 60%);
+  }
+  .hero{padding:72px 0 0;position:relative;z-index:3;}
+  .hero-inner{display:grid;grid-template-columns:1.05fr 0.95fr;gap:32px;align-items:center;}
+  .hero-copy{max-width:100%;}
+  .hero-headline{
+    font-family:'Overpass',sans-serif;font-weight:800;
+    font-size:clamp(34px,5vw,58px);line-height:0.98;letter-spacing:-0.015em;
+    color:var(--route-white);margin:20px 0 0;
+  }
+  .hero-headline em{color:var(--hazard);font-style:normal;}
+  .skyline{display:block;width:100%;height:auto;position:relative;z-index:2;margin-top:44px;}
+  .hero-art{position:relative;z-index:3;}
+  .hero-art svg{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 40px rgba(8,12,30,0.45));}
+  @media(max-width:760px){
+    .hero-inner{grid-template-columns:1fr;gap:20px;}
+    .hero-art{max-width:420px;}
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'Overpass Mono',monospace;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;
+    color:#CFE0D6;margin-bottom:18px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--hazard);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(242,169,59,.55);}70%{box-shadow:0 0 0 9px rgba(242,169,59,0);}100%{box-shadow:0 0 0 0 rgba(242,169,59,0);}}
+
+  .sign-panel{
+    background:var(--signal);
+    border:5px solid var(--route-white);
+    outline:3px solid var(--signal-dark);
+    border-radius:2px;
+    padding:28px 30px;
+    display:inline-flex;
+    align-items:center;
+    gap:18px;
+    max-width:100%;
+  }
+  .sign-chevron{
+    width:0;height:0;flex-shrink:0;
+    border-top:20px solid transparent;
+    border-bottom:20px solid transparent;
+    border-left:26px solid var(--route-white);
+  }
+  .sign-text{color:var(--route-white);}
+  .sign-label{
+    font-family:'Overpass Mono',monospace;font-size:12px;letter-spacing:0.1em;
+    text-transform:uppercase;opacity:0.85;margin-bottom:4px;
+  }
+  .sign-place{
+    font-family:'Overpass',sans-serif;font-weight:800;
+    font-size:clamp(30px,5.2vw,46px);line-height:1;letter-spacing:-0.01em;
+  }
+
+  .lede{
+    margin-top:20px;color:#E9E5DC;font-size:16px;line-height:1.55;max-width:58ch;
+  }
+
+  /* ---------- Distance table ---------- */
+  .distance-table{margin:40px 0;border-top:2px solid var(--asphalt);}
+  .dt-caption{
+    display:flex;justify-content:space-between;font-family:'Overpass Mono',monospace;
+    font-size:11px;color:var(--asphalt-dim);text-transform:uppercase;letter-spacing:0.06em;
+    padding:8px 0;border-bottom:1px solid var(--lane);
+  }
+  .dt-row{
+    display:flex;align-items:baseline;gap:10px;
+    padding:11px 0;border-bottom:1px dashed var(--lane);
+    font-family:'Overpass',sans-serif;
+  }
+  .dt-row .place{font-weight:600;font-size:16px;white-space:nowrap;}
+  .dt-leader{flex:1;border-bottom:2px dotted var(--asphalt-dim);opacity:0.4;transform:translateY(-4px);}
+  .dt-row .num{font-family:'Overpass Mono',monospace;font-weight:600;font-size:15px;white-space:nowrap;}
+  .dt-row .bar-bg{position:relative;flex:1;height:6px;background:var(--lane);border-radius:1px;overflow:hidden;margin:0 4px;}
+  .dt-row .bar-fill{position:absolute;left:0;top:0;height:100%;background:var(--verge);}
+
+  /* ---------- Panels grid ---------- */
+  .panels{display:grid;grid-template-columns:1.15fr 0.85fr;gap:1px;background:var(--lane);border:1px solid var(--lane);margin:40px 0;}
+  .panel{background:var(--panel);padding:24px;}
+  .panel h3{
+    margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:0.07em;
+    color:var(--asphalt-dim);font-family:'Overpass Mono',monospace;
+  }
+  .status-chip{
+    display:inline-block;background:var(--hazard);color:var(--asphalt);font-weight:700;
+    font-size:11px;letter-spacing:0.04em;padding:4px 10px;border-radius:2px;margin-bottom:12px;
+    font-family:'Overpass Mono',monospace;text-transform:uppercase;
+  }
+  .panel p{color:var(--asphalt-dim);font-size:14.5px;line-height:1.6;margin:0;}
+  .panel p strong{color:var(--asphalt);}
+
+  .status{font-family:'Overpass Mono',monospace;font-size:12.5px;color:var(--asphalt-dim);padding:10px 0;}
+  .status.err{color:#A83232;}
+
+  /* ---------- Sign-off strip ---------- */
+  .signoff{
+    background:var(--verge);color:var(--route-white);
+    padding:26px 0;margin:0 0 0;
+  }
+  .signoff strong{font-weight:700;}
+
+  footer{
+    border-top:1px solid var(--lane);padding:22px 0;
+    color:var(--asphalt-dim);font-size:11.5px;font-family:'Overpass Mono',monospace;line-height:1.6;
+  }
+
+  @media(max-width:640px){
+    .panels{grid-template-columns:1fr;}
+    .sign-panel{gap:12px;padding:22px 20px;}
+    .sign-chevron{border-top-width:14px;border-bottom-width:14px;border-left-width:18px;}
+  }
+
+  /* ---------- Chat widget: styled as an SOS call point ---------- */
+  #chat-toggle{
+    position:fixed;bottom:24px;right:24px;
+    width:58px;height:58px;border-radius:4px;
+    background:var(--signal);color:var(--route-white);border:3px solid var(--route-white);
+    outline:2px solid var(--signal-dark);
+    font-family:'Overpass Mono',monospace;font-weight:700;font-size:11px;
+    cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2;
+    z-index:100;transition:transform .15s ease;
+  }
+  #chat-toggle:hover{transform:scale(1.05);}
+
+  .chat-panel{
+    position:fixed;bottom:92px;right:24px;
+    width:360px;max-width:calc(100vw - 32px);
+    height:480px;max-height:calc(100vh - 140px);
+    background:var(--panel);border:1px solid var(--lane);border-radius:4px;
+    box-shadow:0 12px 32px rgba(0,0,0,0.2);
+    display:flex;flex-direction:column;overflow:hidden;z-index:100;
+  }
+  .chat-panel.hidden{display:none;}
+
+  .chat-header{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:14px 16px;background:var(--signal);color:var(--route-white);
+  }
+  .chat-title{font-family:'Overpass',sans-serif;font-weight:800;font-size:14px;letter-spacing:0.01em;}
+  .chat-sub{font-family:'Overpass Mono',monospace;font-size:10.5px;opacity:0.8;margin-top:2px;}
+  #chat-close{background:none;border:none;font-size:14px;color:var(--route-white);cursor:pointer;padding:2px 6px;}
+
+  .chat-keygate{padding:16px;font-size:13px;color:var(--asphalt-dim);line-height:1.5;overflow-y:auto;}
+  .chat-keygate p{margin:0 0 10px;}
+  #chat-key-input{
+    width:100%;padding:9px 10px;font-family:'Overpass Mono',monospace;font-size:13px;
+    border:1px solid var(--lane);border-radius:2px;background:var(--route-white);color:var(--asphalt);
+    margin-bottom:10px;box-sizing:border-box;
+  }
+  #chat-key-submit{
+    width:100%;padding:10px;background:var(--verge);color:var(--route-white);border:none;
+    border-radius:2px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  .chat-key-hint{font-size:11px;margin-top:10px;}
+
+  .chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+  .chat-messages.hidden{display:none;}
+  .msg{font-size:13.5px;line-height:1.5;max-width:88%;padding:8px 11px;border-radius:3px;}
+  .msg.user{align-self:flex-end;background:var(--signal);color:var(--route-white);}
+  .msg.assistant{align-self:flex-start;background:var(--route-white);border:1px solid var(--lane);color:var(--asphalt);}
+  .msg.status{align-self:center;font-family:'Overpass Mono',monospace;font-size:11px;color:var(--asphalt-dim);}
+
+  .chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--lane);}
+  .chat-input-row.hidden{display:none;}
+  #chat-input{
+    flex:1;padding:9px 10px;font-size:13.5px;border:1px solid var(--lane);
+    border-radius:2px;background:var(--route-white);color:var(--asphalt);
+  }
+  #chat-send{
+    padding:9px 14px;background:var(--verge);color:var(--route-white);border:none;
+    border-radius:2px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  #chat-send:disabled{opacity:0.5;cursor:default;}
+</style>
+</head>
+<body>
+
+<header class="gantry">
+  <div class="wrap">
+    <div class="gantry-brand">CITY<span>·</span>VOLT</div>
+    <div class="gantry-meta">EU AFFORDABLE-EV ROUTE FINDER</div>
+  </div>
+</header>
+
+<div class="hero-outer">
+  <div class="wrap">
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="dot"></span>LIVE — EU VEHICLE REGISTRATION DATA (EUROSTAT)</div>
+
+          <h1 class="hero-headline">The affordable EV<br>the EU is <em>still waiting</em> for.</h1>
+
+          <div class="sign-panel" style="margin-top:26px;">
+            <div class="sign-chevron"></div>
+            <div class="sign-text">
+              <div class="sign-label">Leading this sample</div>
+              <div class="sign-place" id="headline">Loading&hellip;</div>
+            </div>
+          </div>
+
+          <p class="lede" id="lede">Querying Eurostat's registration statistics right now — this page never ships a stored number. It's looking for where affordable, small-format EVs are still scarce.</p>
+        </div>
+
+        <div class="hero-art">
+          <svg viewBox="0 0 440 380" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#FFE0A3"/>
+                <stop offset="1" stop-color="#F2A93B"/>
+              </linearGradient>
+              <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#3D4E8F"/>
+                <stop offset="1" stop-color="#1B2350"/>
+              </linearGradient>
+              <linearGradient id="glassLit" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6B79C4"/>
+                <stop offset="1" stop-color="#2E3A72"/>
+              </linearGradient>
+              <linearGradient id="road" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#141B38"/>
+                <stop offset="1" stop-color="#2A2350"/>
+              </linearGradient>
+            </defs>
+
+            <!-- rising sun -->
+            <circle cx="322" cy="120" r="58" fill="url(#sun)" opacity="0.92"/>
+            <circle cx="322" cy="120" r="82" fill="#FFD68C" opacity="0.12"/>
+
+            <!-- far skyline -->
+            <g opacity="0.55" fill="#232C5C">
+              <rect x="20" y="150" width="34" height="120"/>
+              <rect x="58" y="120" width="26" height="150"/>
+              <rect x="150" y="135" width="30" height="135"/>
+              <rect x="250" y="128" width="28" height="142"/>
+              <rect x="360" y="145" width="34" height="125"/>
+              <rect x="400" y="120" width="26" height="150"/>
+            </g>
+
+            <!-- mid towers -->
+            <rect x="70" y="96" width="58" height="184" fill="url(#glass)"/>
+            <rect x="196" y="70" width="66" height="210" fill="url(#glassLit)"/>
+            <rect x="300" y="110" width="54" height="170" fill="url(#glass)"/>
+            <rect x="120" y="150" width="48" height="130" fill="url(#glass)"/>
+            <rect x="256" y="140" width="50" height="140" fill="url(#glass)"/>
+
+            <!-- lit windows -->
+            <g fill="#F2A93B">
+              <rect x="80" y="110" width="7" height="9"/><rect x="94" y="110" width="7" height="9"/><rect x="108" y="128" width="7" height="9"/><rect x="80" y="146" width="7" height="9"/><rect x="108" y="164" width="7" height="9"/>
+              <rect x="206" y="84" width="8" height="10"/><rect x="222" y="84" width="8" height="10"/><rect x="238" y="104" width="8" height="10"/><rect x="206" y="124" width="8" height="10"/><rect x="238" y="144" width="8" height="10"/><rect x="222" y="164" width="8" height="10"/>
+              <rect x="310" y="124" width="7" height="9"/><rect x="326" y="124" width="7" height="9"/><rect x="310" y="150" width="7" height="9"/><rect x="340" y="150" width="7" height="9"/>
+            </g>
+            <g fill="#8894CF" opacity="0.5">
+              <rect x="94" y="128" width="7" height="9"/><rect x="80" y="128" width="7" height="9"/><rect x="108" y="110" width="7" height="9"/>
+              <rect x="206" y="104" width="8" height="10"/><rect x="222" y="124" width="8" height="10"/><rect x="238" y="84" width="8" height="10"/>
+              <rect x="326" y="150" width="7" height="9"/><rect x="340" y="124" width="7" height="9"/>
+            </g>
+
+            <!-- road -->
+            <rect x="0" y="300" width="440" height="80" fill="url(#road)"/>
+            <!-- lane dashes -->
+            <g fill="#3C4675">
+              <rect x="20" y="336" width="26" height="4" rx="2"/>
+              <rect x="70" y="336" width="26" height="4" rx="2"/>
+              <rect x="120" y="336" width="26" height="4" rx="2"/>
+              <rect x="170" y="336" width="26" height="4" rx="2"/>
+              <rect x="220" y="336" width="26" height="4" rx="2"/>
+            </g>
+
+            <!-- charge trail -->
+            <g fill="#7BC9A6">
+              <rect x="150" y="316" width="14" height="5" rx="2.5" opacity="0.5"/>
+              <rect x="172" y="316" width="20" height="5" rx="2.5" opacity="0.7"/>
+              <rect x="200" y="316" width="28" height="5" rx="2.5" opacity="0.9"/>
+            </g>
+
+            <!-- the little EV -->
+            <g transform="translate(236,290)">
+              <rect x="0" y="14" width="96" height="26" rx="9" fill="#FDFDF9"/>
+              <path d="M16 14 Q20 -2 40 -2 L64 -2 Q82 -2 86 14 Z" fill="#FDFDF9"/>
+              <rect x="24" y="2" width="18" height="12" rx="3" fill="#2E3A72"/>
+              <rect x="46" y="2" width="18" height="12" rx="3" fill="#2E3A72"/>
+              <circle cx="24" cy="42" r="10" fill="#141B38"/>
+              <circle cx="24" cy="42" r="4" fill="#3C4675"/>
+              <circle cx="74" cy="42" r="10" fill="#141B38"/>
+              <circle cx="74" cy="42" r="4" fill="#3C4675"/>
+              <rect x="86" y="20" width="8" height="6" rx="2" fill="#F2A93B"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="distance-table">
+    <div class="dt-caption"><span>Country</span><span id="dt-caption-right">registrations sampled</span></div>
+    <div id="country-bars"><div class="status">Fetching live data&hellip;</div></div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <span class="status-chip" id="opportunity-badge">Calculating</span>
+      <h3>What this reading means</h3>
+      <p id="reading-text">Waiting on the live query to finish before drawing a conclusion.</p>
+    </div>
+    <div class="panel">
+      <h3>Why this matters for CityVolt</h3>
+      <p>
+        CityVolt is betting that budget-conscious urban commuters are still waiting for an EV
+        actually priced for them. This is the same live data our launch-market decision is
+        built on — not a number from a pitch deck.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="signoff">
+  <div class="wrap">
+    <strong>Join the early-access list</strong> — we'll tell you the moment CityVolt launches
+    in your country, priced for a city commute, not a showroom brochure.
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    CityVolt — data sourced live from
+    <a href="https://ec.europa.eu/eurostat/web/main/data/database" target="_blank" rel="noopener">Eurostat</a>
+    (dataset road_eqr_zev, zero-emission vehicle registrations by country, public REST API).
+    Built for H9CEAI Final Project.
+  </div>
+</footer>
+
+<!-- ============ Chat widget ============ -->
+<button id="chat-toggle" aria-label="Open assistant">ASK<br>CITYVOLT</button>
+
+<div id="chat-panel" class="chat-panel hidden">
+  <div class="chat-header">
+    <div>
+      <div class="chat-title">Ask CityVolt</div>
+      <div class="chat-sub">Grounded in the live data on this page</div>
+    </div>
+    <button id="chat-close" aria-label="Close">✕</button>
+  </div>
+
+  <div id="chat-keygate" class="chat-keygate">
+    <p>This assistant calls the Anthropic API directly from your browser, so it needs an API
+      key to run. Your key stays in this browser tab only — it's never saved, sent anywhere
+      but Anthropic, or stored when you close this page.</p>
+    <input id="chat-key-input" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <button id="chat-key-submit">Start chatting</button>
+    <p class="chat-key-hint">Don't have a key? Get one free at
+      <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
+    </p>
+  </div>
+
+  <div id="chat-messages" class="chat-messages hidden"></div>
+
+  <div id="chat-input-row" class="chat-input-row hidden">
+    <input id="chat-input" type="text" placeholder="Ask about the market data, the launch plan..." autocomplete="off">
+    <button id="chat-send">Send</button>
+  </div>
+</div>
+
+<script>
+// road_eqr_zev = zero-emission vehicle registrations by country (Eurostat, confirmed
+// from their own "Key figures on transport" article source citation; verified live).
+const DATASET_CODE = "road_eqr_zev";
+const ENDPOINT = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${DATASET_CODE}`;
+
+async function loadOpportunity() {
+  try {
+    const params = new URLSearchParams({ format: "JSON", lang: "EN" });
+    const res = await fetch(`${ENDPOINT}?${params.toString()}`);
+    if (!res.ok) throw new Error(`Eurostat API returned ${res.status}`);
+    const data = await res.json();
+
+    const geoDim = data.dimension.geo.category.index;
+    const geoLabels = data.dimension.geo.category.label;
+    const values = data.value;
+
+    const countries = Object.keys(geoDim)
+      .map(code => ({
+        code,
+        label: geoLabels[code] || code,
+        index: geoDim[code],
+        value: values[geoDim[code]] ?? null,
+      }))
+      .filter(c => c.value !== null && c.code.length === 2)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+
+    if (!countries.length) throw new Error("No country-level values returned");
+
+    const maxVal = countries[0].value;
+    const total = countries.reduce((s, c) => s + c.value, 0);
+
+    document.getElementById("headline").textContent = countries[0].label;
+    document.getElementById("lede").textContent =
+      `Live Eurostat query just now, across ${countries.length} countries in this sample — ` +
+      `use this as a starting signal for where the affordable-EV gap is widest, not a final answer.`;
+    document.getElementById("opportunity-badge").textContent = "Live data loaded";
+    document.getElementById("dt-caption-right").textContent = `n = ${total.toLocaleString()} across sample`;
+    document.getElementById("reading-text").innerHTML =
+      `<strong>${countries[0].label}</strong> leads this sample at ${countries[0].value.toLocaleString()} ` +
+      `sampled registrations. Read this as a starting signal for where to look next, not a ranked ` +
+      `verdict — Marlowe (Researcher) still does the deeper year-over-year analysis behind CityVolt's ` +
+      `actual launch-market decision.`;
+
+    document.getElementById("country-bars").innerHTML = countries.map(c => {
+      const pct = Math.max(4, (c.value / maxVal) * 100);
+      return `<div class="dt-row">
+        <div class="place">${c.label}</div>
+        <div class="dt-leader"></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="num">${c.value.toLocaleString()}</div>
+      </div>`;
+    }).join("");
+
+    window.latestEUData = { countries, total, topCountry: countries[0], fetchedAt: new Date().toISOString() };
+
+  } catch (err) {
+    document.getElementById("headline").textContent = "Connection check needed";
+    document.getElementById("lede").innerHTML =
+      `The live query to Eurostat didn't parse as expected. This page always queries live — ` +
+      `it never falls back to a stored number.`;
+    document.getElementById("opportunity-badge").textContent = "Check connection";
+    document.getElementById("country-bars").innerHTML = `<div class="status err">Error: ${err.message}</div>`;
+    console.error(err);
+  }
+}
+
+loadOpportunity();
+
+// ============ Chat widget logic ============
+let userApiKey = null;
+let chatHistory = [];
+
+const chatToggle = document.getElementById("chat-toggle");
+const chatPanel = document.getElementById("chat-panel");
+const chatClose = document.getElementById("chat-close");
+const chatKeygate = document.getElementById("chat-keygate");
+const chatKeyInput = document.getElementById("chat-key-input");
+const chatKeySubmit = document.getElementById("chat-key-submit");
+const chatMessages = document.getElementById("chat-messages");
+const chatInputRow = document.getElementById("chat-input-row");
+const chatInput = document.getElementById("chat-input");
+const chatSend = document.getElementById("chat-send");
+
+chatToggle.addEventListener("click", () => chatPanel.classList.toggle("hidden"));
+chatClose.addEventListener("click", () => chatPanel.classList.add("hidden"));
+
+chatKeySubmit.addEventListener("click", () => {
+  const key = chatKeyInput.value.trim();
+  if (!key.startsWith("sk-ant-")) {
+    alert("That doesn't look like a valid Anthropic API key (should start with sk-ant-).");
+    return;
+  }
+  userApiKey = key;
+  chatKeygate.classList.add("hidden");
+  chatMessages.classList.remove("hidden");
+  chatInputRow.classList.remove("hidden");
+  addMessage("assistant", "Hi — I'm CityVolt's assistant. Ask me about the EU EV market data on this page, our launch plan, or the affordable-city-EV gap we're targeting.");
+  chatInput.focus();
+});
+chatKeyInput.addEventListener("keydown", e => { if (e.key === "Enter") chatKeySubmit.click(); });
+
+function addMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return div;
+}
+
+function buildSystemPrompt() {
+  const data = window.latestEUData;
+  const dataSummary = data
+    ? `Live data fetched from Eurostat (dataset road_eqr_zev, zero-emission vehicle ` +
+      `registrations) at ${data.fetchedAt}: top countries in this sample are ` +
+      data.countries.map(c => `${c.label} (${c.value.toLocaleString()})`).join(", ") +
+      `. Total sampled: ${data.total.toLocaleString()}.`
+    : "Live data has not finished loading yet on this page — say so if asked about current figures.";
+
+  return (
+    "You are the CityVolt assistant, embedded on CityVolt's website. CityVolt is a startup " +
+    "building a low-cost electric city car for budget-conscious urban commuters across the EU, " +
+    "betting that the EV market has focused on mid-size/premium segments and left this buyer " +
+    "underserved. " +
+    dataSummary +
+    " Answer visitor questions about the market data shown on this page, CityVolt's positioning, " +
+    "and the affordable-EV gap. Ground any factual claim about registrations in the live data " +
+    "above — if you don't have a figure, say you don't have it rather than inventing one. Keep " +
+    "answers short (2-4 sentences) and conversational, written for a prospective customer, not " +
+    "an investor."
+  );
+}
+
+async function sendChatMessage() {
+  const text = chatInput.value.trim();
+  if (!text || !userApiKey) return;
+
+  addMessage("user", text);
+  chatHistory.push({ role: "user", content: text });
+  chatInput.value = "";
+  chatSend.disabled = true;
+  const thinking = addMessage("status", "thinking…");
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": userApiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 400,
+        system: buildSystemPrompt(),
+        messages: chatHistory,
+      }),
+    });
+
+    thinking.remove();
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      addMessage("assistant", `Something went wrong calling the API (${res.status}). Check your key is valid and has credit. Details: ${errBody.slice(0, 200)}`);
+      chatSend.disabled = false;
+      return;
+    }
+
+    const data = await res.json();
+    const replyText = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+    addMessage("assistant", replyText || "(no response)");
+    chatHistory.push({ role: "assistant", content: replyText });
+
+  } catch (err) {
+    thinking.remove();
+    addMessage("assistant", `Network error reaching the API: ${err.message}`);
+  }
+  chatSend.disabled = false;
+  chatInput.focus();
+}
+
+chatSend.addEventListener("click", sendChatMessage);
+chatInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChatMessage(); });
+</script>
+
+</body>
+</html>
