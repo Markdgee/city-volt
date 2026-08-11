@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityVolt — Where's the Gap?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;800&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101314;
+    --ink-dim:#5C6668;
+    --bg:#F3F4EF;
+    --bg-raised:#FFFFFF;
+    --line:#DADBD4;
+    --volt:#2E5E4E;      /* deep transit-map green, not the expected AI-lime */
+    --volt-accent:#FFB63D; /* warm amber, small city-car energy */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px;}
+
+  header.top{border-bottom:1px solid var(--line);padding:20px 0;}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-family:'Archivo Expanded',sans-serif;font-weight:800;letter-spacing:0.02em;font-size:18px;}
+  .brand span{color:var(--volt-accent);}
+  .tag{color:var(--ink-dim);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+
+  .hero{padding:56px 0 36px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;color:var(--volt);font-size:13px;
+    letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center;gap:8px;
+  }
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--volt-accent);
+    box-shadow:0 0 0 0 rgba(255,182,61,0.6);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,182,61,0.5);}70%{box-shadow:0 0 0 10px rgba(255,182,61,0);}100%{box-shadow:0 0 0 0 rgba(255,182,61,0);}}
+
+  h1{font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:clamp(30px,5.5vw,50px);
+    line-height:1.05;margin:14px 0 12px;letter-spacing:-0.01em;}
+  h1 em{color:var(--volt);font-style:normal;}
+  .lede{color:var(--ink-dim);font-size:17px;line-height:1.5;max-width:58ch;}
+
+  .map-strip{
+    display:flex;gap:2px;margin:32px 0 4px;border:1px solid var(--line);
+    background:var(--line);overflow:hidden;border-radius:3px;
+  }
+  .map-bar{flex:1;background:var(--bg-raised);position:relative;height:64px;display:flex;align-items:flex-end;}
+  .map-bar .fill{width:100%;background:var(--volt);opacity:0.15;transition:height 1s ease;}
+  .map-strip-caption{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-dim);margin-bottom:32px;}
+
+  .grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:36px 0;}
+  .cell{background:var(--bg-raised);padding:22px;}
+  .cell h3{margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;}
+
+  .barrow{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:14px;}
+  .barrow .name{width:80px;flex-shrink:0;color:var(--ink);font-weight:500;}
+  .barrow .track{flex:1;height:9px;background:var(--bg);border-radius:2px;overflow:hidden;}
+  .barrow .fill{height:100%;background:var(--volt);}
+  .barrow .num{width:70px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--ink-dim);font-size:12px;}
+
+  .badge{
+    display:inline-block;background:var(--volt-accent);color:#241a05;font-weight:600;
+    font-size:12px;padding:3px 9px;border-radius:20px;margin-bottom:10px;
+  }
+
+  .pitch{border-top:1px solid var(--line);padding:32px 0 60px;color:var(--ink-dim);font-size:15px;line-height:1.6;}
+  .pitch strong{color:var(--ink);}
+
+  .status{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-dim);padding:12px 0;}
+  .status.err{color:#B3401A;}
+
+  footer{border-top:1px solid var(--line);padding:24px 0;color:var(--ink-dim);font-size:12px;font-family:'IBM Plex Mono',monospace;}
+  a{color:var(--volt);}
+
+  @media(max-width:640px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">CITY<span>·</span>VOLT</div>
+    <div class="tag">the affordable EV, for the EU commute</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow"><span class="pulse"></span> LIVE — EU vehicle registration data (Eurostat)</div>
+    <h1 id="headline">Finding the <em>gap</em> across the EU&hellip;</h1>
+    <p class="lede" id="lede">Querying Eurostat's registration statistics right now — this page never ships a stored number. It's looking for where affordable, small-format EVs are still scarce.</p>
+  </div>
+
+  <div class="map-strip" id="map-strip"></div>
+  <div class="map-strip-caption"><span>Registrations sampled, by country</span><span id="map-caption">loading&hellip;</span></div>
+
+  <div class="grid">
+    <div class="cell">
+      <span class="badge" id="opportunity-badge">CALCULATING</span>
+      <h3>Countries in this sample</h3>
+      <div id="country-bars"><div class="status">Fetching live data&hellip;</div></div>
+    </div>
+    <div class="cell">
+      <h3>Why this matters for CityVolt</h3>
+      <p style="color:var(--ink-dim);font-size:14px;line-height:1.6;margin:0;">
+        CityVolt is betting that budget-conscious urban commuters are still waiting for an EV
+        actually priced for them. This dashboard exists to keep that bet honest — it's the
+        same live data our launch-market decision is built on, not a snapshot from a pitch deck.
+      </p>
+    </div>
+  </div>
+
+  <div class="pitch">
+    <strong>For early-access sign-ups:</strong> we'll tell you the moment CityVolt is
+    launching in your country — priced for a city commute, not a showroom brochure.
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    CityVolt — data sourced live from
+    <a href="https://ec.europa.eu/eurostat/web/main/data/database" target="_blank" rel="noopener">Eurostat</a>
+    (EU vehicle registration statistics, public REST API). Built for H9CEAI Final Project.
+    <br>Dataset: road_eqr_zev (zero-emission vehicle registrations by country).
+  </div>
+</footer>
+
+<script>
+// road_eqr_zev = zero-emission vehicle registrations by country (Eurostat, confirmed
+// from their own "Key figures on transport" article source citation).
+const DATASET_CODE = "road_eqr_zev";
+const ENDPOINT = `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${DATASET_CODE}`;
+
+async function loadOpportunity() {
+  try {
+    const params = new URLSearchParams({ format: "JSON", lang: "EN" });
+    const res = await fetch(`${ENDPOINT}?${params.toString()}`);
+    if (!res.ok) throw new Error(`Eurostat API returned ${res.status}`);
+    const data = await res.json();
+
+    // Eurostat's JSON-stat structure varies by dataset; this parses the generic
+    // "geo" dimension index + values map. If the dataset code above is wrong,
+    // this will throw and the catch block below explains what to do.
+    const geoDim = data.dimension.geo.category.index;
+    const geoLabels = data.dimension.geo.category.label;
+    const values = data.value;
+
+    const countries = Object.keys(geoDim)
+      .map(code => ({
+        code,
+        label: geoLabels[code] || code,
+        index: geoDim[code],
+        value: values[geoDim[code]] ?? null,
+      }))
+      .filter(c => c.value !== null && c.code.length === 2) // country-level only, not EU aggregates
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+
+    if (!countries.length) throw new Error("No country-level values returned");
+
+    const maxVal = countries[0].value;
+    const total = countries.reduce((s, c) => s + c.value, 0);
+
+    document.getElementById("headline").innerHTML =
+      `<em>${countries[0].label}</em> leads this live sample`;
+    document.getElementById("lede").textContent =
+      `Live Eurostat query just now, across ${countries.length} countries in this sample — ` +
+      `use this as a starting signal for where the affordable-EV gap is widest, not a final answer.`;
+    document.getElementById("opportunity-badge").textContent = "LIVE DATA LOADED";
+
+    document.getElementById("map-strip").innerHTML = countries.map(c => {
+      const h = Math.max(8, (c.value / maxVal) * 64);
+      return `<div class="map-bar" title="${c.label}"><div class="fill" style="height:${h}px;opacity:1"></div></div>`;
+    }).join("");
+    document.getElementById("map-caption").textContent = `n = ${total.toLocaleString()} across sample`;
+
+    document.getElementById("country-bars").innerHTML = countries.map(c => {
+      const pct = (c.value / maxVal) * 100;
+      return `<div class="barrow">
+        <div class="name">${c.label}</div>
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="num">${c.value.toLocaleString()}</div>
+      </div>`;
+    }).join("");
+
+  } catch (err) {
+    document.getElementById("headline").textContent = "Live data connection needs a check";
+    document.getElementById("lede").innerHTML =
+      `The live query to Eurostat didn't parse as expected. This page always queries live — ` +
+      `it never falls back to a stored number. Most likely cause: <code>DATASET_CODE</code> ` +
+      `in the script needs to be confirmed against the ` +
+      `<a href="https://ec.europa.eu/eurostat/databrowser/" target="_blank">Eurostat Data Browser</a>.`;
+    document.getElementById("opportunity-badge").textContent = "CHECK CONNECTION";
+    document.getElementById("country-bars").innerHTML = `<div class="status err">Error: ${err.message}</div>`;
+    console.error(err);
+  }
+}
+
+loadOpportunity();
+</script>
+
+</body>
+</html>
