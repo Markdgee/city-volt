@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ok<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -487,6 +487,28 @@ async function loadOpportunity() {
 
 loadOpportunity();
 
+// ============ World Bank live fetch (keyless) ============
+// GDP per capita (current US$), indicator NY.GDP.PCAP.CD, for context on
+// local affordability. Queried live at page load; not hardcoded.
+async function loadWorldBank() {
+  try {
+    const countries = "IT;ES;FR;DE;PL;HR;RO;HU";
+    const url = `https://api.worldbank.org/v2/country/${countries}/indicator/NY.GDP.PCAP.CD?format=json&per_page=200&mrnev=1`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`World Bank API ${res.status}`);
+    const json = await res.json();
+    const rows = (json[1] || [])
+      .filter(r => r.value != null)
+      .map(r => ({ country: r.country.value, gdp: Math.round(r.value), year: r.date }));
+    if (rows.length) {
+      window.latestWBData = { rows, fetchedAt: new Date().toISOString() };
+    }
+  } catch (err) {
+    console.warn("World Bank fetch failed:", err);
+  }
+}
+loadWorldBank();
+
 // ============ Chat widget logic ============
 let userApiKey = null;
 let chatHistory = [];
@@ -538,12 +560,20 @@ function buildSystemPrompt() {
       `. Total sampled: ${data.total.toLocaleString()}.`
     : "Live data has not finished loading yet on this page — say so if asked about current figures.";
 
+  const wb = window.latestWBData;
+  const wbSummary = wb
+    ? ` Live World Bank data (GDP per capita, current US$, fetched ${wb.fetchedAt}): ` +
+      wb.rows.map(r => `${r.country} $${r.gdp.toLocaleString()} (${r.year})`).join(", ") +
+      `. Use this to answer affordability questions — e.g. how a low-cost EV compares to local average income by country.`
+    : "";
+
   return (
     "You are the CityVolt assistant, embedded on CityVolt's website. CityVolt is a startup " +
     "building a low-cost electric city car for budget-conscious urban commuters across the EU, " +
     "betting that the EV market has focused on mid-size/premium segments and left this buyer " +
     "underserved. " +
     dataSummary +
+    wbSummary +
     " Answer visitor questions about the market data shown on this page, CityVolt's positioning, " +
     "and the affordable-EV gap. Ground any factual claim about registrations in the live data " +
     "above — if you don't have a figure, say you don't have it rather than inventing one. Keep " +
